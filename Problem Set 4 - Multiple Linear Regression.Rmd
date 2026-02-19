@@ -1,0 +1,178 @@
+---
+title: "Predictive Analysis Problem Set 4"
+author: "Meghna Krishan_749"
+date: "2026-02-19"
+output: word_document
+---
+Consider the Credit data in the ISLR library. Choose balance as the response and Age, Limit and Rating as the predictors.
+
+```{r}
+rm(list=ls())
+library(ISLR)
+attach(Credit)
+head(Credit)
+df=Credit[,c(3,4,6,12)]
+head(df)
+```
+
+(a) Make a scatter plot of (i) Age versus Limit and (ii) Rating Versus Limit. Comment on the scatter plot.
+
+```{r}
+par(mfrow=c(1,2))
+plot(Limit,Rating,main="Scatterplot of Rating vs Limit")
+plot(Limit,Age,main="Scatterplot of Age vs Limit")
+par(mfrow=c(1,1))
+```
+
+Comment:
+
+Rating vs Limit:
+
+The scatterplot shows an extremely strong positive linear relationship between Rating and Limit. This suggests that including both variables in a regression model may cause severe multicollinearity.
+
+Age vs Limit:
+
+The scatterplot shows a very weak (almost no) linear relationship between Age and Limit. The points are widely scattered without any clear trend.
+
+(b) Run three separate regressions: (i) Balance on Age and Limit (ii) Balance on Age, Rating and Limit (iii) Balance on Rating and Limit. Present all the regression output in a single table using stargazer. What is the marked difference that you can observe from the output?
+
+```{r}
+fit1=lm(Balance~Age+Limit)
+fit2=lm(Balance~Rating+Age+Limit)
+fit3=lm(Balance~Rating+Limit)
+library(stargazer)
+stargazer(fit1,fit2,fit3,type="text",out="f2.txt")
+```
+
+Marked difference observed:
+
+• In model (1), Limit is highly significant (0.173***).
+
+• In model (2), when Rating is added, Limit becomes statistically insignificant (0.019, not significant).
+
+• In model (3), Limit remains insignificant.
+
+At the same time, Rating is significant when included (in models 2 and 3).
+
+This indicates that Rating absorbs the explanatory power of Limit. From the earlier scatterplot, Rating and Limit are almost perfectly linearly related, so this is a clear case of multicollinearity. When both are included, the model cannot separately identify their individual effects.
+
+(c) Calculate the variance inflation factor (VIF) and comment on multicollinearity.
+
+```{r}
+library(car)
+vif(fit1)
+vif(fit2)
+vif(fit3)
+```
+
+The VIF results clearly confirm the presence of multicollinearity.
+
+In fit1, the VIF values for Age and Limit are approximately 1, which indicates no multicollinearity. This means the predictors in that model are essentially independent of each other.
+
+However, in fit2 and fit3, the VIF values for Rating and Limit are extremely large (around 160). A VIF above 10 is already considered problematic, so values around 160 indicate severe multicollinearity. This happens because Rating and Limit are almost perfectly linearly related.
+
+Thus, when both Rating and Limit are included in the model, they compete to explain the same variation in Balance, leading to unstable coefficient estimates and inflated standard errors. This explains why Limit becomes insignificant once Rating is added.
+
+Overall, the VIF results strongly support the earlier conclusion that Rating and Limit should not be included together in the same regression model.
+
+---
+
+## 2. Problem to demonstrate the detection of outlier, leverage and influential points
+
+Attach “Boston” data from MASS library in R. Select median value of owner-occupied homes, as the response and per capita crime rate, nitrogen oxides concentration, proportion of blacks and percentage of lower status of the population as predictors.
+
+The objective is to fit a multiple linear regression model of
+the response on the predictors. With reference to this problem, detect outliers, leverage points and influential points if any.
+
+```{r}
+rm(list=ls())
+library(MASS)
+attach(Boston)
+df=data.frame(medv,crim,black,nox,lstat)
+head(df)
+```
+
+```{r}
+model=lm(medv~.,data=df)
+summary(model)
+```
+
+Fitted Model:
+
+$$
+\widehat{medv} = 30.0536 
+- 0.059424\,crim 
++ 0.006785\,black 
++ 3.415809\,nox 
+- 0.918431\,lstat
+$$
+
+We now draw the **residual plot**
+
+```{r}
+plot(model$fitted.values, resid(model),
+     xlab="Fitted Values",
+     ylab="Residuals",
+     main="Residuals vs Fitted")
+abline(h=0,col="red",lwd=2)
+```
+
+Comment:
+
+From the residual plot alone we can say some outliers both in the positive and negative direction.
+
+But from this plot we cannot comment on existence of leverage or influential points.
+
+#### To find Potential Outliers:
+
+We find out the standardized residuals from the fitted model.
+
+A point is declared as a potential outlier if its standradized residual is greater than 2 or less than -2.
+
+```{r}
+#Finding the standardized residuals
+std.res=rstandard(model)
+#Potential Outlier Detection
+outliers=which(abs(std.res)>2)
+outliers
+length(outliers)
+```
+
+We can observe 31 data points which can be potentially outliers. 
+
+#### To find Leverge points
+
+First, we find out the diagonal elements of the hat matrix. Now we calculate a cutoff point L=3*(p+1)/n
+where p is the number of predictors and n is number of rows. If the hatvalues exceed the leverage value then we call the points potential leverages.
+
+```{r}
+lev=hatvalues(model)
+
+n=nrow(df) #number of rows
+p=4  #number of predictors
+
+#Calculating the leverage values
+cutoff=3*(p+1)/n
+cutoff
+
+# High leverage observations
+leverage=which(lev>cutoff)
+leverage
+length(leverage)
+```
+
+We can observe 29 potential leverage points.
+
+#### To find Influential points
+
+We find out the Cook's distance Di which is a function of standardized residuals and elements of hat matrix.
+
+If for a data point Di>1, we can say that point is influential point.
+
+```{r}
+cook=cooks.distance(model) 
+influential=which(cook>1)
+length(influential)
+```
+
+In this model no value of Di exceeds one. So we can conclude that there exists no influential point.
