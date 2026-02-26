@@ -1,0 +1,98 @@
+---
+title: "Predictive Analysis Problem Set 5"
+author: "Meghna Krishan_749"
+date: "2026-02-19"
+output: html_document
+---
+
+Question 5
+
+Get the fgl data set from “MASS” library.
+
+```{r}
+rm(list=ls())
+library(MASS)
+attach(fgl)
+head(fgl)
+```
+
+(a) Considering the refractive index (RI) of “Vehicle Window glass” as the variable of interest and assuming linearity of regression, run multiple linear regression of RI on different metallic oxides. From the p value, report which metallic oxide best explains the refractive index.
+
+```{r}
+d=fgl[fgl$type=="Veh",]
+d$type = NULL
+head(d)
+
+fit1=lm(RI~.,data=d)
+summary(fit1)
+```
+
+Fitted Model:
+
+$$
+\hat{RI} = 131.4641 
+- 0.4333\,Na 
+- 0.2866\,Mg 
+- 0.8909\,Al 
+- 1.8824\,Si 
+- 2.4232\,K 
++ 1.5326\,Ca 
++ 0.3517\,Ba 
++ 3.8931\,Fe
+$$ with R squared = 0.9906, so the fit is very good.
+
+From the p values we can see Fe is the most significant predictor in the multiple linear regression of RI on all the continuous predictors as the p-value corresponding to Fe = 0.00362 is the least among the other p-values.
+
+(b) Run a simple linear regression of RI on the best predictor chosen in (a).
+
+```{r}
+fit2=lm(RI~Fe,data=d)
+summary(fit2)
+```
+
+Fitted Model:
+
+$$
+\hat{RI} = -0.5007 + 8.1362\,Fe
+$$
+
+with multiple R square = 0.2097 so the fit is not good.
+
+(c) Can you further improve the regression of the refractive index of “Vehicle Window glass” on the predictor chosen by you in part (a)? Give the new fitted model and compare its performance with the model in (b).
+
+```{r}
+#Quadratic model
+fit3=lm(RI~Fe+I(Fe^2),data=d)
+summary(fit3)
+```
+
+Fitted Model:
+
+$$
+\hat{RI} = -0.2785 
+- 12.1810\,Fe 
++ 65.9600\,Fe^2
+$$
+
+with R squared = 0.3554, the fit is not good but shows clear improvement over linear regression.
+
+```{r}
+#Cubic Model
+fit4=lm(RI~Fe+I(Fe^2)+I(Fe^3),data=d)
+summary(fit4)
+```
+
+Fitted Model:
+
+$$
+\hat{RI} = -0.2694 
+- 16.7947\,Fe 
++ 107.1214\,Fe^2 
+- 79.0070\,Fe^3
+$$
+
+with R square = 0.3566
+
+Conclusion:
+
+Quadratic is giving substantial improvement over linear regression but Cubic is slight improvement over quadratic so we choose quadratic regression as improvement over liner regression model.
